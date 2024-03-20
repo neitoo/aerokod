@@ -1,0 +1,55 @@
+#Setting for idea
+.idea
+.vscode
+.svn
+
+# Archives
+*.7z
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.tar.gz.*
+*.tgz
+*.zip
+
+# Logs, backups, and trash
+*.log
+*.bak
+Thumbs.db
+desktop.ini
+.DS_Store
+.DS_Store?
+*.DS_Store
+
+# Video & audio
+*.wmv
+*.mpg
+*.mpeg
+#*.mp4
+*.mov
+*.flv
+*.avi
+*.ogv
+*.ogg
+*.webm
+*.wav
+*.mp3
+*.wma
+*.m4v
+
+# Content
+*.psd
+*.pdf
+
+#docker
+docker/db
+docker/rabbitmq
+
+#projects
+.env.local
+frontend/.env
+frontend/node_modules
+frontend/.next
+node_modules
