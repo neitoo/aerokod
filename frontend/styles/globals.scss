@@ -210,10 +210,19 @@
     }
     tr:not(:last-child){
       @apply border-b border-black-200/30 border-solid 
-
-      
     }
-
     @apply t10
+  }
+
+  .selector{
+    @apply bg-white border border-black-100/75 text-black-200 t7 rounded-base block w-full py-3.5 px-5 
+  }
+
+  .label-selector{
+    @apply t8 text-black-200/40 mb-3
+  }
+
+  .radio-selector {
+    @apply selector cursor-pointer peer-checked:bg-blue peer-checked:border-blue peer-checked:text-white
   }
 }
