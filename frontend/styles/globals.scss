@@ -48,7 +48,7 @@
   }
 
   body {
-    @apply bg-milk
+    @apply bg-white
   }
 
   h1 {
@@ -188,5 +188,32 @@
 
   .first-block-gutter {
     @apply mt-20 2xl:mt-28
+  }
+
+  .card{
+    @apply pl-10 pr-10 pt-8 pb-14 rounded-base border border-black-200 border-solid text-black
+  }
+
+  .button-like {
+    @apply border border-black-200 border-solid rounded-full w-14 h-14 leading-none t4 p-5
+  }
+
+  .table {
+    td:first-child{
+      @apply opacity-50
+    }
+    td:last-child{
+      @apply text-end py-2 text-black
+    }
+    tr{
+      @apply p-1
+    }
+    tr:not(:last-child){
+      @apply border-b border-black-200/30 border-solid 
+
+      
+    }
+
+    @apply t10
   }
 }
