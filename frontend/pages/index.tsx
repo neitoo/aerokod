@@ -53,6 +53,8 @@ const HomePage: NextPage<HomePageProps> = ({ apiResponse, filtersResponse }) => 
     max: filtersResponse.data.square.max_range,
   });
 
+  const [isFilterVisible, setIsFilterVisible] = useState(false);
+
   const fetchFilteredFlats = useCallback(
     debounce(async () => {
       setLoading(true);
@@ -143,12 +145,28 @@ const HomePage: NextPage<HomePageProps> = ({ apiResponse, filtersResponse }) => 
     }
   };
 
+  const toggleVisibility = () => {
+    setIsFilterVisible(!isFilterVisible);
+  };
+
   return (
     <div className="xl:my-8 xl:mx-14 xs:my-5 xs:mx-5">
       <h4 className="9xl">
         Планировки
       </h4>
-      <div className="grid xl:grid-cols-4 xs:grid-cols-1 gap-x-5 my-12">
+      <button
+        type="button"
+        className="filter-button"
+        onClick={toggleVisibility}
+      >
+        Фильтр
+      </button>
+      <div className={`grid gap-x-5 xl:px-0 xl:my-12 xl:visible xl:w-full xl:h-full xl:grid-cols-4 xl:relative xs:grid-cols-1 xs:fixed xs:w-screen xs:px-5 xs:z-10 xs:top-0 xs:left-0 xs:bg-white xs:h-screen ${isFilterVisible ? 'xs:visible' : 'xs:collapse'}`}>
+        {isFilterVisible && (
+          <h4 className="9xl xl:my-0 xs:my-5 xl:collapse">
+            Фильтр
+          </h4>
+        )}
         <div>
           <p className="label-selector">Проект</p>
           <select
@@ -221,8 +239,17 @@ const HomePage: NextPage<HomePageProps> = ({ apiResponse, filtersResponse }) => 
             />
           </div>
         </div>
+        {isFilterVisible && (
+          <button
+            type="button"
+            className="filter-button t5"
+            onClick={toggleVisibility}
+          >
+            Смотреть квартиры
+          </button>
+        )}
       </div>
-      <div className="xl:visible xs:collapse xl:mb-16 xs:mb-0 grid grid-cols-3  text-black t8">
+      <div className="xl:visible xs:collapse xl:mb-16 xl:h-full xs:mb-0 grid grid-cols-3 xs:h-0  text-black t8">
         <div />
         <p className="text-center">
           Найдено
@@ -251,7 +278,7 @@ const HomePage: NextPage<HomePageProps> = ({ apiResponse, filtersResponse }) => 
           ↻ Очистить всё
         </button>
       </div>
-      <hr className="border border-black-100/20" />
+      <hr className="border border-black-100/20 xl:visible xs:collapse" />
       <div className="grid xl:grid-cols-3 gap-5 xs:grid-cols-1 my-12">
         {flats.map((flat) => (
           <div key={flat.id} className="card">
