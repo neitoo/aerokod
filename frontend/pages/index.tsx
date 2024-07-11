@@ -1,9 +1,11 @@
 import { FiltersResponse } from '@/types/Filters';
 import { ApiResponse, Flat } from '@/types/Flats';
 import { GetStaticProps, NextPage } from 'next';
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import RangeSlider from '@/components/RangeSlider';
 import { numberWithSpaces } from '@/utils/numberWithSpaces';
+import { useRouter } from 'next/router';
+import { debounce } from 'lodash';
 
 interface HomePageProps {
   apiResponse: ApiResponse;
@@ -32,15 +34,101 @@ export const getStaticProps: GetStaticProps = async () => {
 };
 
 const HomePage: NextPage<HomePageProps> = ({ apiResponse, filtersResponse }) => {
+  const router = useRouter();
   const [flats, setFlats] = useState<Flat[]>(apiResponse.data);
   const [currentPage, setCurrentPage] = useState<number>(apiResponse.meta.current_page);
-  const [lastPage] = useState<number>(apiResponse.meta.last_page);
+  const [lastPage, setLastPage] = useState<number>(apiResponse.meta.last_page);
+  const [totalFlats, setTotalFlats] = useState<number>(apiResponse.meta.total);
   const [loading, setLoading] = useState<boolean>(false);
-  const [projects] = useState(filtersResponse.data.projects);
-  const [rooms] = useState(filtersResponse.data.rooms);
+  const [projects, setProjects] = useState(filtersResponse.data.projects);
+  const [rooms, setRooms] = useState(filtersResponse.data.rooms);
   const [selectedProject, setSelectedProject] = useState<number | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<number | null>(null);
-  console.log(selectedRoom);
+  const [priceRange, setPriceRange] = useState<{ min: number, max: number }>({
+    min: filtersResponse.data.price.min_range,
+    max: filtersResponse.data.price.max_range,
+  });
+  const [squareRange, setSquareRange] = useState<{ min: number, max: number }>({
+    min: filtersResponse.data.square.min_range,
+    max: filtersResponse.data.square.max_range,
+  });
+
+  const fetchFilteredFlats = useCallback(
+    debounce(async () => {
+      setLoading(true);
+      const queryParams = new URLSearchParams();
+      if (selectedProject) queryParams.append('f[projects][]', selectedProject.toString());
+      if (selectedRoom !== null) queryParams.append('f[rooms][]', selectedRoom.toString());
+
+      queryParams.append('f[price][min]', priceRange.min.toString());
+      queryParams.append('f[price][max]', priceRange.max.toString());
+      queryParams.append('f[square][min]', squareRange.min.toString());
+      queryParams.append('f[square][max]', squareRange.max.toString());
+      queryParams.append('per_page', '9');
+      queryParams.append('page', '1');
+
+      try {
+        const response = await fetch(`http://localhost:8083/api/v1/flats?${queryParams.toString()}`);
+        if (!response.ok) {
+          throw new Error(`Error: ${response.statusText}`);
+        }
+        const data: ApiResponse = await response.json();
+        setFlats(data.data);
+        setCurrentPage(1);
+        setLastPage(data.meta.last_page);
+        setTotalFlats(data.meta.total);
+        router.push(`?${queryParams.toString()}`, undefined, { shallow: true });
+      } catch (error) {
+        console.error('Failed:', error);
+      } finally {
+        setLoading(false);
+      }
+    }, 300),
+    [selectedProject, selectedRoom, priceRange, squareRange],
+  );
+
+  useEffect(() => {
+    fetchFilteredFlats();
+    return () => {
+      fetchFilteredFlats.cancel();
+    };
+  }, [selectedProject, selectedRoom, priceRange, squareRange, fetchFilteredFlats]);
+
+  useEffect(() => {
+    const queryParams = new URLSearchParams(window.location.search);
+    const projectParam = queryParams.get('f[projects][]');
+    const roomParam = queryParams.get('f[rooms][]');
+    const priceMinParam = queryParams.get('f[price][min]');
+    const priceMaxParam = queryParams.get('f[price][max]');
+    const squareMinParam = queryParams.get('f[square][min]');
+    const squareMaxParam = queryParams.get('f[square][max]');
+
+    if (projectParam) setSelectedProject(Number(projectParam));
+    if (roomParam) setSelectedRoom(Number(roomParam));
+    if (priceMinParam) setPriceRange((prev) => ({ ...prev, min: Number(priceMinParam) }));
+    if (priceMaxParam) setPriceRange((prev) => ({ ...prev, max: Number(priceMaxParam) }));
+    if (squareMinParam) setSquareRange((prev) => ({ ...prev, min: Number(squareMinParam) }));
+    if (squareMaxParam) setSquareRange((prev) => ({ ...prev, max: Number(squareMaxParam) }));
+  }, []);
+
+  useEffect(() => {
+    const fetchFilters = async () => {
+      const queryParams = new URLSearchParams();
+      if (selectedProject) queryParams.append('f[projects][]', selectedProject.toString());
+      if (selectedRoom) queryParams.append('f[rooms][]', selectedRoom.toString());
+      queryParams.append('f[price][min]', priceRange.min.toString());
+      queryParams.append('f[price][max]', priceRange.max.toString());
+      queryParams.append('f[square][min]', squareRange.min.toString());
+      queryParams.append('f[square][max]', squareRange.max.toString());
+
+      const response = await fetch(`http://localhost:8083/api/v1/filters?${queryParams.toString()}`);
+      const data: FiltersResponse = await response.json();
+      setProjects(data.data.projects);
+      setRooms(data.data.rooms);
+    };
+
+    fetchFilters();
+  }, [selectedProject, selectedRoom, priceRange, squareRange]);
 
   const loadMore = async () => {
     if (currentPage < lastPage && !loading) {
@@ -82,7 +170,19 @@ const HomePage: NextPage<HomePageProps> = ({ apiResponse, filtersResponse }) => 
           <ul className="flex gap-3">
             {rooms.map((room) => (
               <li key={room.number} className="list-none">
-                <input type="radio" id={room.number.toString()} name="rooms" value={room.number.toString()} disabled={room.disabled} onChange={(e) => setSelectedRoom(parseInt(e.target.value, 10))} className="hidden peer" />
+                <input
+                  type="radio"
+                  id={room.number.toString()}
+                  name="rooms"
+                  value={room.number.toString()}
+                  checked={selectedRoom === room.number}
+                  disabled={room.disabled}
+                  onChange={(e) => {
+                    const value = parseInt(e.target.value, 10);
+                    setSelectedRoom(value);
+                  }}
+                  className="hidden peer"
+                />
                 <label htmlFor={room.number.toString()} className="radio-selector">
                   <div className="block">
                     <div className="t7">{room.number !== 0 ? `${room.number}к` : 'Ст'}</div>
@@ -96,13 +196,14 @@ const HomePage: NextPage<HomePageProps> = ({ apiResponse, filtersResponse }) => 
           <p className="label-selector">Стоимость</p>
           <div className="w-full">
             <RangeSlider
-              initialMax={filtersResponse.data.price.max_range}
-              initialMin={filtersResponse.data.price.min_range}
+              initialMax={priceRange.max}
+              initialMin={priceRange.min}
               min={filtersResponse.data.price.min}
               max={filtersResponse.data.price.max}
               step={1}
               priceCap={1}
               char="₽"
+              onChange={(min, max) => setPriceRange({ min, max })}
             />
           </div>
         </div>
@@ -110,12 +211,13 @@ const HomePage: NextPage<HomePageProps> = ({ apiResponse, filtersResponse }) => 
           <p className="label-selector">Задайте площадь, м²</p>
           <div className="w-full">
             <RangeSlider
-              initialMax={filtersResponse.data.square.max_range}
-              initialMin={filtersResponse.data.square.min_range}
+              initialMax={squareRange.max}
+              initialMin={squareRange.min}
               min={filtersResponse.data.square.min}
               max={filtersResponse.data.square.max}
               step={1}
               priceCap={1}
+              onChange={(min, max) => setSquareRange({ min, max })}
             />
           </div>
         </div>
@@ -125,11 +227,27 @@ const HomePage: NextPage<HomePageProps> = ({ apiResponse, filtersResponse }) => 
         <p className="text-center">
           Найдено
           {' '}
-          {apiResponse.meta.total}
+          {totalFlats}
           {' '}
           квартир
         </p>
-        <button type="button" className="justify-self-end">
+        <button
+          type="button"
+          className="justify-self-end"
+          onClick={() => {
+            setSelectedProject(null);
+            setSelectedRoom(null);
+            setPriceRange({
+              min: filtersResponse.data.price.min_range,
+              max: filtersResponse.data.price.max_range,
+            });
+            setSquareRange({
+              min: filtersResponse.data.square.min_range,
+              max: filtersResponse.data.square.max_range,
+            });
+            router.push('/', undefined, { shallow: false });
+          }}
+        >
           ↻ Очистить всё
         </button>
       </div>
