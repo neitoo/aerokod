@@ -2,6 +2,8 @@ import { FiltersResponse } from '@/types/Filters';
 import { ApiResponse, Flat } from '@/types/Flats';
 import { GetStaticProps, NextPage } from 'next';
 import React, { useState } from 'react';
+import RangeSlider from '@/components/RangeSlider';
+import { numberWithSpaces } from '@/utils/numberWithSpaces';
 
 interface HomePageProps {
   apiResponse: ApiResponse;
@@ -29,10 +31,6 @@ export const getStaticProps: GetStaticProps = async () => {
   };
 };
 
-export function numberWithSpaces(x: number) {
-  return x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-}
-
 const HomePage: NextPage<HomePageProps> = ({ apiResponse, filtersResponse }) => {
   const [flats, setFlats] = useState<Flat[]>(apiResponse.data);
   const [currentPage, setCurrentPage] = useState<number>(apiResponse.meta.current_page);
@@ -40,8 +38,6 @@ const HomePage: NextPage<HomePageProps> = ({ apiResponse, filtersResponse }) => 
   const [loading, setLoading] = useState<boolean>(false);
   const [projects] = useState(filtersResponse.data.projects);
   const [rooms] = useState(filtersResponse.data.rooms);
-  const [price] = useState(filtersResponse.data.price);
-  const [square] = useState(filtersResponse.data.square);
   const [selectedProject, setSelectedProject] = useState<number | null>(null);
   const [selectedRoom, setSelectedRoom] = useState<number | null>(null);
   console.log(selectedRoom);
@@ -64,7 +60,7 @@ const HomePage: NextPage<HomePageProps> = ({ apiResponse, filtersResponse }) => 
       <h4 className="9xl">
         Планировки
       </h4>
-      <div className="grid grid-cols-4 gap-x-5 my-12">
+      <div className="grid xl:grid-cols-4 xs:grid-cols-1 gap-x-5 my-12">
         <div>
           <p className="label-selector">Проект</p>
           <select
@@ -75,7 +71,7 @@ const HomePage: NextPage<HomePageProps> = ({ apiResponse, filtersResponse }) => 
           >
             <option value="">Все</option>
             {projects.map((project) => (
-              <option key={project.id} value={project.id}>
+              <option key={project.id} value={project.id} disabled={project.disabled}>
                 {project.title}
               </option>
             ))}
@@ -85,8 +81,8 @@ const HomePage: NextPage<HomePageProps> = ({ apiResponse, filtersResponse }) => 
           <p className="label-selector">Укажите количество комнат</p>
           <ul className="flex gap-3">
             {rooms.map((room) => (
-              <li className="list-none">
-                <input type="radio" id={room.number.toString()} name="rooms" value={room.number.toString()} onChange={(e) => setSelectedRoom(parseInt(e.target.value, 10))} className="hidden peer" />
+              <li key={room.number} className="list-none">
+                <input type="radio" id={room.number.toString()} name="rooms" value={room.number.toString()} disabled={room.disabled} onChange={(e) => setSelectedRoom(parseInt(e.target.value, 10))} className="hidden peer" />
                 <label htmlFor={room.number.toString()} className="radio-selector">
                   <div className="block">
                     <div className="t7">{room.number !== 0 ? `${room.number}к` : 'Ст'}</div>
@@ -98,50 +94,33 @@ const HomePage: NextPage<HomePageProps> = ({ apiResponse, filtersResponse }) => 
         </div>
         <div>
           <p className="label-selector">Стоимость</p>
-          <div className="w-full selector">
-            <div className="flex horizontal justify-between">
-              <p>
-                от
-                {' '}
-                {numberWithSpaces(price.min_range)}
-                {' '}
-                ₽
-              </p>
-              <p>
-                —
-              </p>
-              <p>
-                до
-                {' '}
-                {numberWithSpaces(price.max_range)}
-                {' '}
-                ₽
-              </p>
-            </div>
+          <div className="w-full">
+            <RangeSlider
+              initialMax={filtersResponse.data.price.max_range}
+              initialMin={filtersResponse.data.price.min_range}
+              min={filtersResponse.data.price.min}
+              max={filtersResponse.data.price.max}
+              step={1}
+              priceCap={1}
+              char="₽"
+            />
           </div>
         </div>
         <div>
           <p className="label-selector">Задайте площадь, м²</p>
-          <div className="w-full selector">
-            <div className="flex horizontal justify-between">
-              <p>
-                от
-                {' '}
-                {square.min_range}
-              </p>
-              <p>
-                —
-              </p>
-              <p>
-                до
-                {' '}
-                {square.max_range}
-              </p>
-            </div>
+          <div className="w-full">
+            <RangeSlider
+              initialMax={filtersResponse.data.square.max_range}
+              initialMin={filtersResponse.data.square.min_range}
+              min={filtersResponse.data.square.min}
+              max={filtersResponse.data.square.max}
+              step={1}
+              priceCap={1}
+            />
           </div>
         </div>
       </div>
-      <div className="xl:visible xs:collapse grid grid-cols-3 mb-16 text-black t8">
+      <div className="xl:visible xs:collapse xl:mb-16 xs:mb-0 grid grid-cols-3  text-black t8">
         <div />
         <p className="text-center">
           Найдено
