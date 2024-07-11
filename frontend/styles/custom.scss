@@ -1,0 +1,52 @@
+@import "globals.scss";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer components {
+  .card{
+    @apply pl-10 pr-10 pt-8 pb-14 rounded-base border border-black-200 border-solid text-black
+  }
+
+  .button-like {
+    @apply border border-black-200 border-solid rounded-full w-14 h-14 leading-none t4 p-5
+  }
+
+  .table {
+    td:first-child{
+      @apply opacity-50
+    }
+    td:last-child{
+      @apply text-end py-2 text-black
+    }
+    tr{
+      @apply p-1
+    }
+    tr:not(:last-child){
+      @apply border-b border-black-200/30 border-solid 
+    }
+    @apply t10
+  }
+
+  .selector{
+    @apply bg-white border border-black-100/75 text-black-200 t7 rounded-base block w-full py-3.5 px-5 
+  }
+
+  .label-selector{
+    @apply t8 text-black-200/40 mb-3 xl:mt-0 xs:mt-3
+  }
+
+  .radio-selector {
+    @apply selector cursor-pointer peer-checked:bg-blue peer-checked:border-blue peer-checked:text-white
+  }
+
+  input[type=range]::-webkit-slider-thumb{
+    pointer-events: auto;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    -webkit-appearance: none;
+    @apply bg-blue
+  }
+}
