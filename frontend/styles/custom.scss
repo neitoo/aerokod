@@ -49,4 +49,8 @@
     -webkit-appearance: none;
     @apply bg-blue
   }
+
+  .filter-button{
+    @apply w-full bg-blue xl:collapse xl:my-0 rounded-base text-white t11 py-3 xs:my-12 visible active:bg-blue-700
+  }
 }
